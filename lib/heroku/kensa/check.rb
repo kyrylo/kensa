@@ -236,8 +236,16 @@ module Heroku
         end
       end
 
-      def heroku_id
-        "app#{rand(10000)}@kensa.heroku.com"
+      def upstream_id
+        "app#{rand(10000)}@kensa.#{upstream}.com"
+      end
+
+      def upstream_id_key
+        :"#{upstream}_id"
+      end
+
+      def upstream
+        data[:upstream] || "heroku"
       end
 
       def credentials
@@ -260,7 +268,7 @@ module Heroku
         reader, writer = nil
 
         payload = {
-          :heroku_id => heroku_id,
+          upstream_id_key => upstream_id,
           :plan => data[:plan] || 'test',
           :callback_url => callback, 
           :logplex_token => nil,
@@ -327,6 +335,26 @@ module Heroku
         data[:provision_response] = response
 
         run ProvisionResponseCheck, data
+
+        if data[:callback]
+          check "callback called" do
+            server = TCPServer.open(7779)
+            client = server.accept
+            body = OkJson.encode(
+              id: "999",
+              name: "kensa-test-app",
+              config: data[:provision_response]["config"],
+              callback_url: "http://localhost:7779/vendor/apps/999",
+              owner_email: "kensa-test-app@example.com",
+              region: "amazon-web-services::us-east-1",
+              logplex_token: "example",
+              domains: ["example.com"]
+            )
+            puts body
+            client.write(%(HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: #{body.size}\r\n\r\n#{body}))
+            true
+          end
+        end
       end
 
     ensure
@@ -379,7 +407,7 @@ module Heroku
         raise ArgumentError, "No plan specified" if new_plan.nil?
 
         path = "#{base_path}/#{CGI::escape(id.to_s)}"
-        payload = {:plan => new_plan, :heroku_id => heroku_id}
+        payload = {:plan => new_plan, upstream_id_key => upstream_id}
 
         test "PUT #{path}"
         check "response" do
