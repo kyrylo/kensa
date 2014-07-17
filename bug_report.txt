@@ -1,0 +1,6 @@
+kensa at /Users/kyrylosilin/.gem/ruby/2.1.2/bundler/gems/kensa-e0f3edebced4 did not have a valid gemspec.
+This prevents bundler from installing bins or native extensions, but that may not affect its functionality.
+The validation message from Rubygems was:
+  duplicate dependency on contest (>= 0, development), (>= 0) use:
+    add_runtime_dependency 'contest', '>= 0', '>= 0'
+Using kensa 1.4.3 from git://github.com/ConradIrwin/kensa.git (at v1.4.3.)
